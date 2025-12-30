@@ -20,57 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
 
-      - name: Fetch base branch
-        run: git fetch origin ${{ github.event.pull_request.base.ref }}
-
-      - name: Check for custom guidelines
-        id: guidelines
-        run: |
-          if [ -f ".claude/CODE_REVIEW_GUIDELINES.md" ]; then
-            echo "has_custom=true" >> $GITHUB_OUTPUT
-            echo "📋 Custom guidelines found"
-            GUIDELINES=$(cat .claude/CODE_REVIEW_GUIDELINES.md)
-            echo "custom_content<<EOF" >> $GITHUB_OUTPUT
-            echo "$GUIDELINES" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          else
-            echo "has_custom=false" >> $GITHUB_OUTPUT
-            echo "ℹ️ No custom guidelines, using defaults"
-          fi
-
-      - name: Claude Review (Custom Guidelines)
-        if: steps.guidelines.outputs.has_custom == 'true'
-        uses: anthropics/claude-code-action@v1
+      - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--max-turns 15 --allowedTools "Bash(gh:*),Bash(git:*),Read,Glob,Grep"'
-          prompt: |
-            Review this PR and leave inline comments on issues found.
-
-            Follow these team guidelines:
-
-            ${{ steps.guidelines.outputs.custom_content }}
-
-      - name: Claude Review (Default Java/Spring Boot)
-        if: steps.guidelines.outputs.has_custom == 'false'
-        uses: anthropics/claude-code-action@v1
-        with:
-          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--max-turns 15 --allowedTools "Bash(gh:*),Bash(git:*),Read,Glob,Grep"'
-          prompt: |
-            Review this PR and leave inline comments on issues found.
-            Focus on Java/Spring Boot best practices, security issues, and code quality.
 
   claude-respond:
     if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
