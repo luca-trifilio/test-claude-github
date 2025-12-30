@@ -24,7 +24,11 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: "Review this PR and create inline comments on specific lines where you find issues"
+          prompt: |
+            Review this PR following the guidelines in CLAUDE.md.
+            Use the MCP tool create_pull_request_review to create a review with inline comments.
+            For each issue found, add a comment with: path (file path), line (line number), and body (issue description).
+            Use Italian language. Use severity emojis: 🔴 Critical, 🟠 Major, 🟡 Minor, 🟢 Suggestion.
 
   claude-respond:
     if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
