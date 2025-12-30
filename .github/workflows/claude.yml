@@ -30,7 +30,7 @@ jobs:
 
             Get PR number with: gh pr view --json number -q .number
             Get changed files with: gh pr diff
-          claude_args: '--max-turns 10 --allowedTools "Bash(gh:*)" --allowedTools "Read" --allowedTools "Glob" --allowedTools "Grep"'
+          claude_args: '--max-turns 10 --allowedTools "Bash" --allowedTools "Read" --allowedTools "Glob" --allowedTools "Grep"'
 
   claude-respond:
     if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
