@@ -21,7 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Check for custom guidelines
         id: guidelines
@@ -45,7 +45,9 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: '--max-turns 15'
           prompt: |
-            Review this PR following these team guidelines:
+            Review this PR and leave inline comments on issues found.
+
+            Follow these team guidelines:
 
             ${{ steps.guidelines.outputs.custom_content }}
 
@@ -56,7 +58,8 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: '--max-turns 15'
           prompt: |
-            Review this PR for Java/Spring Boot best practices, security issues, and code quality.
+            Review this PR and leave inline comments on issues found.
+            Focus on Java/Spring Boot best practices, security issues, and code quality.
 
   claude-respond:
     if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
