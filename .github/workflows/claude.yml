@@ -8,6 +8,12 @@ on:
   pull_request_review_comment:
     types: [created]
 
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+  id-token: write
+
 jobs:
   claude-review:
     if: github.event_name == 'pull_request'
@@ -16,7 +22,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: "Review this PR. Check for bugs, code quality, security issues."
+          prompt: "Review this PR and leave comments. Check for bugs, code quality, security issues. Post your review as a PR comment."
           claude_args: "--max-turns 5"
 
   claude-respond:
