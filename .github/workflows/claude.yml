@@ -21,15 +21,49 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: anthropics/claude-code-action@v1
+      - name: Check for custom guidelines
+        id: guidelines
+        run: |
+          if [ -f ".claude/CODE_REVIEW_GUIDELINES.md" ]; then
+            echo "has_custom=true" >> $GITHUB_OUTPUT
+            GUIDELINES=$(cat .claude/CODE_REVIEW_GUIDELINES.md)
+            echo "content<<EOF" >> $GITHUB_OUTPUT
+            echo "$GUIDELINES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "has_custom=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Claude Review (Custom Guidelines)
+        if: steps.guidelines.outputs.has_custom == 'true'
+        uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh pr diff:*),Read,Glob,Grep"'
+          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Glob,Grep"'
           prompt: |
-            Review this PR following the guidelines in CLAUDE.md.
-            Use mcp__github_inline_comment__create_inline_comment to add inline comments on specific lines.
-            For each issue, specify: file path, line number, comment body with severity emoji.
-            Use Italian. Emojis: 🔴 Critical, 🟠 Major, 🟡 Minor, 🟢 Suggestion.
+            ## Team Guidelines
+            ${{ steps.guidelines.outputs.content }}
+
+            ## Instructions
+            CRITICAL: Use mcp__github_inline_comment__create_inline_comment for EACH issue.
+            DO NOT use gh commands.
+
+            For each issue: mcp__github_inline_comment__create_inline_comment(path, line, body)
+
+      - name: Claude Review (Default)
+        if: steps.guidelines.outputs.has_custom == 'false'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Glob,Grep"'
+          prompt: |
+            Review PR following Java/Spring Boot best practices.
+
+            CRITICAL: Use mcp__github_inline_comment__create_inline_comment for EACH issue.
+            DO NOT use gh commands.
+
+            For each issue: mcp__github_inline_comment__create_inline_comment(path, line, body)
+            Emojis: 🔴 Critical, 🟠 Major, 🟡 Minor, 🟢 Suggestion
 
   claude-respond:
     if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
