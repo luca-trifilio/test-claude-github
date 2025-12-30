@@ -41,14 +41,15 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: '--allowedTools "mcp__github_inline_comment__create_inline_comment,Read,Glob,Grep"'
           prompt: |
-            ## Team Guidelines
+            CRITICAL: You MUST use mcp__github_inline_comment__create_inline_comment tool for EACH issue found.
+            DO NOT use gh commands. The MCP tool is available and required.
+
+            1. Read the PR diff to find issues
+            2. For EACH issue call: mcp__github_inline_comment__create_inline_comment(path, line, body)
+            3. Body format: "[emoji] [severity]: [description]"
+
+            ## Team Guidelines to follow:
             ${{ steps.guidelines.outputs.content }}
-
-            ## Instructions
-            CRITICAL: Use mcp__github_inline_comment__create_inline_comment for EACH issue.
-            DO NOT use gh commands.
-
-            For each issue: mcp__github_inline_comment__create_inline_comment(path, line, body)
 
       - name: Claude Review (Default)
         if: steps.guidelines.outputs.has_custom == 'false'
