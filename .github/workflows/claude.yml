@@ -19,23 +19,32 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           prompt: |
-            Review this PR. Check for bugs, code quality, security issues.
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
 
-            For each issue found, create an inline comment on the specific line using:
-            gh api repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/comments -f body="your comment" -f path="file/path.java" -F line=LINE_NUMBER -f side=RIGHT
+            Review this PR focusing on:
+            - Code quality and best practices
+            - Potential bugs
+            - Security implications
 
-            Get PR number with: gh pr view --json number -q .number
-            Get changed files with: gh pr diff
-          claude_args: '--max-turns 10 --allowedTools "Bash" --allowedTools "Read" --allowedTools "Glob" --allowedTools "Grep"'
+            Use `gh pr comment` for top-level summary.
+            Use `mcp__github__create_pull_request_review` to create inline comments on specific lines of code.
+          claude_args: '--max-turns 10 --allowedTools "mcp__github__create_pull_request_review,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Glob,Grep"'
 
   claude-respond:
     if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
