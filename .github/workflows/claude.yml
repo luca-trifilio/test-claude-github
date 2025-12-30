@@ -45,22 +45,9 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: '--max-turns 15'
           prompt: |
-            REPO: ${{ github.repository }}
-            PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
-
-            ## Team Guidelines
+            Review this PR following these team guidelines:
 
             ${{ steps.guidelines.outputs.custom_content }}
-
-            ## Review Instructions
-
-            Review this PR following the team guidelines above. Focus on:
-            1. Compliance with team guidelines
-            2. Potential bugs and edge cases
-            3. Security vulnerabilities
-
-            Create inline comments on specific lines where you find issues.
-            Use severity: 🔴 Critical, 🟠 Major, 🟡 Minor, 🟢 Suggestion
 
       - name: Claude Review (Default Java/Spring Boot)
         if: steps.guidelines.outputs.has_custom == 'false'
@@ -69,38 +56,7 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: '--max-turns 15'
           prompt: |
-            REPO: ${{ github.repository }}
-            PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
-
-            ## Default Review Guidelines (Java/Spring Boot)
-
-            Review this PR following standard best practices:
-
-            ### Java
-            - Naming conventions (camelCase, PascalCase)
-            - Optional<T> instead of null where appropriate
-            - Specific exception handling (no generic Exception)
-            - Immutability where possible
-
-            ### Spring Boot
-            - Layer separation (Controller → Service → Repository)
-            - No business logic in Controllers
-            - Constructor injection (not @Autowired field injection)
-            - Input validation with @Valid
-
-            ### Security
-            - Input validation on all endpoints
-            - SQL injection prevention
-            - No sensitive data in logs
-            - Proper credential handling
-
-            ### Clean Code
-            - Single Responsibility Principle
-            - DRY (Don't Repeat Yourself)
-            - Short, well-named methods
-
-            Create inline comments on specific lines where you find issues.
-            Use severity: 🔴 Critical, 🟠 Major, 🟡 Minor, 🟢 Suggestion
+            Review this PR for Java/Spring Boot best practices, security issues, and code quality.
 
   claude-respond:
     if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
