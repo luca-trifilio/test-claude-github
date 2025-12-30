@@ -23,20 +23,84 @@ jobs:
         with:
           fetch-depth: 1
 
-      - uses: anthropics/claude-code-action@v1
+      - name: Check for custom guidelines
+        id: guidelines
+        run: |
+          if [ -f ".claude/CODE_REVIEW_GUIDELINES.md" ]; then
+            echo "has_custom=true" >> $GITHUB_OUTPUT
+            echo "📋 Custom guidelines found"
+            GUIDELINES=$(cat .claude/CODE_REVIEW_GUIDELINES.md)
+            echo "custom_content<<EOF" >> $GITHUB_OUTPUT
+            echo "$GUIDELINES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "has_custom=false" >> $GITHUB_OUTPUT
+            echo "ℹ️ No custom guidelines, using defaults"
+          fi
+
+      - name: Claude Review (Custom Guidelines)
+        if: steps.guidelines.outputs.has_custom == 'true'
+        uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_args: '--max-turns 15'
           prompt: |
             REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
+            PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
 
-            Review this PR focusing on:
-            - Code quality and best practices
-            - Potential bugs
-            - Security implications
+            ## Team Guidelines
 
-            Review the code changes and create inline comments on specific lines where you find issues.
+            ${{ steps.guidelines.outputs.custom_content }}
+
+            ## Review Instructions
+
+            Review this PR following the team guidelines above. Focus on:
+            1. Compliance with team guidelines
+            2. Potential bugs and edge cases
+            3. Security vulnerabilities
+
+            Create inline comments on specific lines where you find issues.
+            Use severity: 🔴 Critical, 🟠 Major, 🟡 Minor, 🟢 Suggestion
+
+      - name: Claude Review (Default Java/Spring Boot)
+        if: steps.guidelines.outputs.has_custom == 'false'
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude_args: '--max-turns 15'
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR #${{ github.event.pull_request.number }}: ${{ github.event.pull_request.title }}
+
+            ## Default Review Guidelines (Java/Spring Boot)
+
+            Review this PR following standard best practices:
+
+            ### Java
+            - Naming conventions (camelCase, PascalCase)
+            - Optional<T> instead of null where appropriate
+            - Specific exception handling (no generic Exception)
+            - Immutability where possible
+
+            ### Spring Boot
+            - Layer separation (Controller → Service → Repository)
+            - No business logic in Controllers
+            - Constructor injection (not @Autowired field injection)
+            - Input validation with @Valid
+
+            ### Security
+            - Input validation on all endpoints
+            - SQL injection prevention
+            - No sensitive data in logs
+            - Proper credential handling
+
+            ### Clean Code
+            - Single Responsibility Principle
+            - DRY (Don't Repeat Yourself)
+            - Short, well-named methods
+
+            Create inline comments on specific lines where you find issues.
+            Use severity: 🔴 Critical, 🟠 Major, 🟡 Minor, 🟢 Suggestion
 
   claude-respond:
     if: github.event_name == 'issue_comment' || github.event_name == 'pull_request_review_comment'
